@@ -16,6 +16,8 @@ return new class extends Migration
             $table->timestamps();
             $table->string('title');
             $table->text('description')->nullable();
+            $table->enum('is_completed',['PENDING','COMPLETED'])->default('PENDING');
+            $table->timestamp('completed_at')->nullable();
         });
     }
 
