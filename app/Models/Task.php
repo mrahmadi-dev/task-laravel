@@ -12,12 +12,13 @@ class Task extends Model
     protected $fillable = [
         'title',
         'description',
-        'is_completed',
+        'status',
+        'status_modified_at',
     ];
 
-    protected $appends = [
-        'status',
-    ];
+//    protected $appends = [
+//        'status',
+//    ];
 
 //    public function getStatusAttribute()
 //    {

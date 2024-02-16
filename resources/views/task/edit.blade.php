@@ -29,15 +29,40 @@
 
         <div class="col-12 mt-1">
             <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="gridCheck">
+                <input class="form-check-input" value="COMPLETED" name="status" type="checkbox" id="gridCheck" {{ $task->status == 'COMPLETED' ? 'checked' : '' }}>
                 <label class="form-check-label" for="gridCheck">
                     Completed
                 </label>
             </div>
+        </div>
+        <div id="datetimeWrapper" class="col-6 mt-1 position-relative mt-3" style="display: {{  $task->status == 'COMPLETED' ? 'block' : 'none' }}">
+            <label for="inputTitle" class="form-label">completion time</label>
+            <input type="text" class="form-control" id="datetimepicker" value="{{ $task->status_modified_at  }}" name="status_modified_at">
         </div>
 
         <div class="col-12 mt-4">
             <button type="submit" class="btn btn-primary">Save</button>
         </div>
     </form>
+@endsection
+
+@section('js')
+<script>
+    $(function(){
+        $("#gridCheck").click(function (){
+            if($(this).prop('checked') == true) {
+                $("#datetimeWrapper").show()
+            }else {
+                $("#datetimeWrapper").hide()
+            }
+        })
+        $("#datetimepicker").flatpickr(
+            {
+                enableTime: true,
+                dateFormat: "Y-m-d H:i:ss",
+                time_24hr: true
+            }
+        )
+    });
+</script>
 @endsection
