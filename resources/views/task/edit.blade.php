@@ -37,7 +37,7 @@
         </div>
         <div id="datetimeWrapper" class="col-6 mt-1 position-relative mt-3" style="display: {{  $task->status == 'COMPLETED' ? 'block' : 'none' }}">
             <label for="inputTitle" class="form-label">completion time</label>
-            <input type="text" class="form-control" id="datetimepicker" value="{{ $task->status_modified_at  }}" name="status_modified_at">
+            <input type="text" class="form-control" id="datetimepicker" value="{{ $task->status_modified_at ?? $now  }}" name="status_modified_at">
         </div>
 
         <div class="col-12 mt-4">

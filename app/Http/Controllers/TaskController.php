@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Enum\TaskStatus;
 use App\Http\Requests\StoreTaskRequest;
 use App\Models\Task;
 use Carbon\Carbon;
-use http\Env\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -17,23 +17,13 @@ class TaskController extends Controller
      */
     public function index(Request $request)
     {
-        $date_condition = Carbon::now()->subDays(config('constants.latest_days_records'))->toDateTimeString();
         $filter = $request->query('filter');
-        if ($filter == 'PENDING') {
-            $tasks = DB::table('tasks')->where('status',$filter)
-                ->orderByDesc('created_at')->paginate(config('constants.pagination_num'));
-        }else if ($filter == 'COMPLETED'){
-            $tasks = DB::table('tasks')->where('status',$filter)
-                ->where('created_at','>=',$date_condition)
-                ->orderByDesc('created_at')->paginate(config('constants.pagination_num'));
+        if ($filter == TaskStatus::PENDING->value){
+            $tasks = Task::filterPendingTasks()->paginate(config('constants.pagination_num'));
+        }else if ($filter == TaskStatus::COMPLETED->value){
+            $tasks = Task::filterCompletedTasks()->paginate(config('constants.pagination_num'));
         }else{
-            $tasks = DB::table('tasks')->orderByDesc('created_at')
-                ->where('status','PENDING')
-                ->orWhere(function ($query) {
-                    $query->where('status','COMPLETED')
-                        ->where('created_at','>=',Carbon::now()->subDays(config('constants.latest_days_records'))->toDateTimeString());
-                })
-                ->paginate(config('constants.pagination_num'));
+            $tasks = Task::filterTasks()->paginate(config('constants.pagination_num'));
         }
         return view('task.index',[
             'tasks' => $tasks,
@@ -77,8 +67,10 @@ class TaskController extends Controller
      */
     public function edit(Task $task)
     {
+        $datetime = new \DateTime();
         return view('task.edit',[
-            'task' => $task
+            'task' => $task,
+            'now' => $datetime->format('Y-m-d hH:i:s')
         ]);
     }
 
@@ -93,8 +85,13 @@ class TaskController extends Controller
         $task->description = $_data['description'];
         if (isset($_data['status'])) {
             $task->status = $_data['status'];
+            $task->status_modified_at = $_data['status_modified_at'];
+        }else{
+            $datetime = new \DateTime();
+            $task->status = TaskStatus::PENDING->value;
+            $task->status_modified_at = $datetime->format('Y-m-d H:i:s');
         }
-        $task->status_modified_at = $_data['status_modified_at'];
+
 
         $task->save();
         return redirect()->route('task.index');
@@ -111,7 +108,7 @@ class TaskController extends Controller
     public function changeStatus(Task $task)
     {
         $date = new \DateTime();
-        $task->status = 'COMPLETED';
+        $task->status = TaskStatus::COMPLETED->value;
         $task->status_modified_at = $date->format('Y-m-d H:i:s');
         $task->save();
 
