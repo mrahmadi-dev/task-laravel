@@ -24,7 +24,8 @@
         </tr>
         </thead>
         <tbody>
-        @foreach($tasks as $key => $task)
+        @foreach($tasks->data as $key => $task)
+
         <tr>
             <th scope="row">{{ $key +1  }}</th>
             <td>{{ $task->title }}</td>
@@ -52,32 +53,91 @@
                 </a>
 
                 @if($task->status == 'PENDING')
-                    <a class="d-inline-block" href="{{ route('task.change_state',['task'=> $task->id]) }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2-square" viewBox="0 0 16 16">
-                            <path d="M3 14.5A1.5 1.5 0 0 1 1.5 13V3A1.5 1.5 0 0 1 3 1.5h8a.5.5 0 0 1 0 1H3a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V8a.5.5 0 0 1 1 0v5a1.5 1.5 0 0 1-1.5 1.5z"/>
-                            <path d="m8.354 10.354 7-7a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0"/>
-                        </svg>
-                    </a>
+                    <form action="{{ route('task.update',['task'=> $task->id]) }}" method="POST" class="d-inline">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="id" value="{{ $task->id }}">
+                        <input type="hidden" name="status" value="COMPLETED">
+                        <button type="submit" style="background: white;border: none;" class="delete-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2-square" viewBox="0 0 16 16">
+                                <path d="M3 14.5A1.5 1.5 0 0 1 1.5 13V3A1.5 1.5 0 0 1 3 1.5h8a.5.5 0 0 1 0 1H3a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V8a.5.5 0 0 1 1 0v5a1.5 1.5 0 0 1-1.5 1.5z"/>
+                                <path d="m8.354 10.354 7-7a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0"/>
+                            </svg>
+                        </button>
+
+{{--                    <button type="submit" style="background: white;border: none;" class="delete-btn" onclick="handleDeleteTask({{ $task->id }})">--}}
+{{--                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2-square" viewBox="0 0 16 16">--}}
+{{--                            <path d="M3 14.5A1.5 1.5 0 0 1 1.5 13V3A1.5 1.5 0 0 1 3 1.5h8a.5.5 0 0 1 0 1H3a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V8a.5.5 0 0 1 1 0v5a1.5 1.5 0 0 1-1.5 1.5z"/>--}}
+{{--                            <path d="m8.354 10.354 7-7a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0"/>--}}
+{{--                        </svg>--}}
+{{--                    </button>--}}
+                    </form>
                 @endif
-
-
             </td>
         </tr>
+
         @endforeach
         </tbody>
     </table>
-    {{ $tasks->links() }}
+
+    @if($tasks->links)
+        <nav class="mt-5">
+            <ul class="pagination">
+                @if ($tasks->meta->current_page == 1)
+                    <li class="page-item disabled" aria-disabled="true" aria-label="@lang('pagination.previous')">
+                        <span class="page-link" aria-hidden="true">&lsaquo;</span>
+                    </li>
+                @else
+                    <li class="page-item">
+                        <a class="page-link" href="{{ $tasks->links->prev }}" rel="prev" aria-label="@lang('pagination.previous')">&lsaquo;</a>
+                    </li>
+                @endif
+
+                @foreach ($tasks->meta->links as $page => $element)
+                            @if ($page == ($tasks->meta->current_page - 1) )
+                                <li class="page-item active" aria-current="page"><span class="page-link">{{ ++$page }}</span></li>
+                            @else
+                                <li class="page-item"><a class="page-link" href="{{ $element }}">{{ ++$page }}</a></li>
+                            @endif
+                @endforeach
+                @if ($tasks->links->next)
+                    <li class="page-item">
+                        <a class="page-link" href="{{ $tasks->links->next }}" rel="next" aria-label="@lang('pagination.next')">&rsaquo;</a>
+                    </li>
+                @else
+                    <li class="page-item disabled" aria-disabled="true" aria-label="@lang('pagination.next')">
+                        <span class="page-link" aria-hidden="true">&rsaquo;</span>
+                    </li>
+                @endif
+            </ul>
+        </nav>
+    @endif
+
 @endsection
 
 @section('js')
 <script>
     document.getElementById('filter').addEventListener('change',function () {
+        let currentUrl = 'http://localhost:8000'
         let val = document.getElementById('filter').value
         if(val !== ""){
-            window.location = '/task?filter='+val
+            window.location = currentUrl+'/task?filter='+val
         }else{
-            window.location = '/task'
+            window.location = currentUrl+'/task'
         }
     })
+
+    {{--function handleDeleteTask(taskId) {--}}
+    {{--    let formData = new FormData();--}}
+    {{--    formData.append('status','COMPLETED')--}}
+    {{--    formData.append('_token','{{ csrf_token() }}')--}}
+    {{--    let xhttp = new XMLHttpRequest();--}}
+    {{--    xhttp.onload = function() {--}}
+
+    {{--    }--}}
+    {{--    xhttp.open("PUT", "/task/"+taskId);--}}
+    {{--    xhttp.send({});--}}
+    {{--}--}}
+
 </script>
 @endsection

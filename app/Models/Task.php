@@ -21,7 +21,6 @@ class Task extends Model
         'status_modified_at',
     ];
 
-
     public function scopeFilterPendingTasks($query)
     {
         return $query->where('status',TaskStatus::PENDING)
@@ -31,7 +30,7 @@ class Task extends Model
     {
         $date_condition = Carbon::now()->subDays(config('constants.latest_days_records'))->toDateTimeString();
         return $query->where('status',TaskStatus::COMPLETED)
-            ->where('created_at','>=',$date_condition)
+            ->where('status_modified_at','>=',$date_condition)
             ->orderByDesc('created_at');
     }
 
@@ -40,16 +39,8 @@ class Task extends Model
         return $query->where('status',TaskStatus::PENDING)
             ->orWhere(function ($query) {
                 $query->where('status',TaskStatus::COMPLETED)
-                    ->where('created_at','>=',Carbon::now()->subDays(config('constants.latest_days_records'))->toDateTimeString());
+                    ->where('status_modified_at','>=',Carbon::now()->subDays(config('constants.latest_days_records'))->toDateTimeString());
             })->orderByDesc('created_at');
     }
 
-//    protected $appends = [
-//        'status',
-//    ];
-
-//    public function getStatusAttribute()
-//    {
-//        return $this->attributes['is_completed'] ? 'completed' : 'pending';
-//    }
 }

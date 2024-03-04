@@ -2,39 +2,38 @@
 
 namespace App\Http\Controllers;
 
+use App\Dtos\Task\TaskCreateDto;
+use App\Dtos\Task\TaskDto;
+use App\Dtos\Task\TaskIndexDto;
 use App\Enum\TaskStatus;
 use App\Http\Requests\StoreTaskRequest;
 use App\Models\Task;
-use Carbon\Carbon;
+use App\Services\Task\TaskCreateServiceConcrete;
+use App\Services\Task\TaskIndexServiceConcrete;
+use App\Services\Task\TaskUpdateServiceConcrete;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Date;
-use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class TaskController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(Request $request, TaskIndexServiceConcrete $taskIndexServiceConcrete): View
     {
-        $filter = $request->query('filter');
-        if ($filter == TaskStatus::PENDING->value){
-            $tasks = Task::filterPendingTasks()->paginate(config('constants.pagination_num'));
-        }else if ($filter == TaskStatus::COMPLETED->value){
-            $tasks = Task::filterCompletedTasks()->paginate(config('constants.pagination_num'));
-        }else{
-            $tasks = Task::filterTasks()->paginate(config('constants.pagination_num'));
-        }
+        $dtoObject = TaskIndexDto::create($request);
+        $tasks = $taskIndexServiceConcrete->index($dtoObject);
         return view('task.index',[
             'tasks' => $tasks,
-            'filter' => $filter,
+            'filter' => $dtoObject->filter,
         ]);
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): View
     {
         return view('task.create');
     }
@@ -42,20 +41,17 @@ class TaskController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreTaskRequest $request)
+    public function store(StoreTaskRequest $request, TaskCreateServiceConcrete $taskCreateServiceConcrete): RedirectResponse
     {
-        $_data = $request->all();
-        Task::create([
-            'title' => $_data['title'],
-            'description' => $_data['description']
-        ]);
+        $taskCreateDto = TaskCreateDto::create($request);
+        $taskCreateServiceConcrete->index($taskCreateDto);
         return redirect()->route('task.index');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Task $task)
+    public function show(Task $task): View
     {
         return view('task.show',[
             'task' => $task
@@ -65,7 +61,7 @@ class TaskController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Task $task)
+    public function edit(Task $task): View
     {
         $datetime = new \DateTime();
         return view('task.edit',[
@@ -77,23 +73,10 @@ class TaskController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(StoreTaskRequest $request, Task $task)
+    public function update(Request $request, Task $task, TaskUpdateServiceConcrete $taskUpdateServiceConcrete): RedirectResponse
     {
-        $_data = $request->all();
-
-        $task->title = $_data['title'];
-        $task->description = $_data['description'];
-        if (isset($_data['status'])) {
-            $task->status = $_data['status'];
-            $task->status_modified_at = $_data['status_modified_at'];
-        }else{
-            $datetime = new \DateTime();
-            $task->status = TaskStatus::PENDING->value;
-            $task->status_modified_at = $datetime->format('Y-m-d H:i:s');
-        }
-
-
-        $task->save();
+        $taskCreateDto = TaskCreateDto::create($request);
+        $taskUpdateServiceConcrete->index($task,$taskCreateDto);
         return redirect()->route('task.index');
     }
 
@@ -105,13 +88,4 @@ class TaskController extends Controller
         //
     }
 
-    public function changeStatus(Task $task)
-    {
-        $date = new \DateTime();
-        $task->status = TaskStatus::COMPLETED->value;
-        $task->status_modified_at = $date->format('Y-m-d H:i:s');
-        $task->save();
-
-        return redirect()->route('task.index');
-    }
 }
